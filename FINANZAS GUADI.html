@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)file:///C:/Users/MARISA/Downloads/index_2.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ingresos y Egresos USD</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --ink:#1f2933; --muted:#6b7280; --line:#e3e6ea;
+    --ing:#127a4a; --ing-bg:#e8f5ee; --egr:#b42318; --egr-bg:#fdecea; --acc:#1d4ed8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  header{background:#111827;color:#fff;padding:18px 16px}
+  header h1{margin:0;font-size:20px;font-weight:600}
+  header p{margin:4px 0 0;color:#cbd5e1;font-size:13px}
+  main{max-width:1100px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .tag{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600}
+  .tag.ing{background:var(--ing-bg);color:var(--ing)} .tag.egr{background:var(--egr-bg);color:var(--egr)}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+  input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;width:100%;background:#fff;color:var(--ink)}
+  input[type=number]{text-align:right}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .row > div{flex:1 1 160px}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 12px}
+  button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+  button.danger{color:var(--egr)}
+  .table-wrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:12px;color:var(--muted);font-weight:600;background:#fafbfc}
+  td input{width:72px;padding:5px 6px}
+  #tDeudas input{width:120px} #tDeudas input[type=text]{width:170px;text-align:left}
+  .aviso{background:#fff7e6;border:1px solid #f5d28a;color:#8a5a00;padding:10px;border-radius:6px;font-size:14px}
+  tfoot td{font-weight:700}
+  .week{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+  .week-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .week-head input{width:auto}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .kpi{border-radius:8px;padding:12px;border:1px solid var(--line)}
+  .kpi small{display:block;color:var(--muted);font-size:12px}
+  .kpi b{font-size:20px}
+  .kpi.ing{background:var(--ing-bg)} .kpi.ing b{color:var(--ing)}
+  .kpi.egr{background:var(--egr-bg)} .kpi.egr b{color:var(--egr)}
+  .pos{color:var(--ing)} .neg{color:var(--egr)}
+  .bar{height:8px;background:var(--egr-bg);border-radius:4px;overflow:hidden}
+  .bar span{display:block;height:100%;background:var(--egr)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.grid2{grid-template-columns:1fr}}
+  .muted{color:var(--muted);font-size:13px}
+  .actions{display:flex;flex-wrap:wrap;gap:8px}
+  @media print{.no-print{display:none!important} body{background:#fff} .card{border:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Control de Ingresos y Egresos (USD)</h1>
+  <p>Horas semanales × valor hora + tips diarios + ingreso fijo − egresos por rubro</p>
+</header>
+
+<main>
+  <!-- PERÍODO Y PARÁMETROS -->
+  <section class="card">
+    <h2>Período y parámetros</h2>
+    <div class="row">
+      <div><label>Mes</label><input type="month" id="mes"></div>
+      <div><label>Valor por hora (USD)</label><input type="number" id="valorHora" step="0.01" min="0"></div>
+      <div><label>Ingreso fijo mensual (USD)</label><input type="number" id="fijo" step="0.01" min="0"></div>
+      <div class="actions no-print">
+        <button onclick="window.print()">Imprimir</button>
+        <button onclick="exportar()">Exportar respaldo</button>
+        <button onclick="document.getElementById('imp').click()">Importar</button>
+        <input type="file" id="imp" accept=".json" hidden="" onchange="importar(event)">
+      </div>
+    </div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section class="card">
+    <h2>Resumen del mes</h2>
+    <div class="kpis">
+      <div class="kpi ing"><small>Horas trabajadas</small><b id="kHoras">5 h</b></div>
+      <div class="kpi ing"><small>Ingreso por horas</small><b id="kIngHoras">US$ 56,25</b></div>
+      <div class="kpi ing"><small>Tips</small><b id="kTips">US$ 150,00</b></div>
+      <div class="kpi ing"><small>Ingreso fijo</small><b id="kFijo">US$ 900,00</b></div>
+      <div class="kpi ing"><small>Total ingresos</small><b id="kIng">US$ 1.106,25</b></div>
+      <div class="kpi egr"><small>Total egresos</small><b id="kEgr">US$ 5,00</b></div>
+      <div class="kpi"><small>Saldo</small><b id="kSaldo" class="pos">US$ 1.101,25</b></div>
+    </div>
+  </section>
+
+  <!-- INGRESOS -->
+  <section class="card">
+    <h2>Ingresos <span class="tag ing">Horas + Tips</span></h2>
+    <p class="muted">Cargá cada día: elegí la fecha, las horas trabajadas y los tips. El día se ubica solo en su semana (de lunes a domingo). También podés corregir los valores directamente en la grilla.</p>
+    <div class="row no-print" style="margin-bottom:16px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafbfc">
+      <div><label>Día</label><input type="date" id="iFecha"></div>
+      <div><label>Horas trabajadas</label><input type="number" id="iHoras" min="0" step="0.25" placeholder="0"></div>
+      <div><label>Tips del día (USD)</label><input type="number" id="iTips" min="0" step="0.01" placeholder="0"></div>
+      <div style="flex:0 0 auto"><button class="primary" onclick="cargarDia()">Cargar día</button></div>
+    </div>
+    <div id="semanas">
+    <div class="week">
+      <div class="week-head">
+        <div><b>Semana 1</b> &nbsp;<span class="muted">desde</span>
+          <input type="date" value="2026-10-26" onchange="setDesde(0,this.value)"></div>
+        <button class="danger no-print" onclick="borrarSemana(0)">Eliminar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Concepto</th><th>Lun<br><span style="font-weight:400">26/10</span></th><th>Mar<br><span style="font-weight:400">27/10</span></th><th>Mié<br><span style="font-weight:400">28/10</span></th><th>Jue<br><span style="font-weight:400">29/10</span></th><th>Vie<br><span style="font-weight:400">30/10</span></th><th>Sáb<br><span style="font-weight:400">31/10</span></th><th>Dom<br><span style="font-weight:400">01/11</span></th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Horas</td><td><input type="number" min="0" step="0.25" value="" oninput="setDia(0,0,'h',this.value)"></td><td><input type="number" min="0" step="0.25" value="" oninput="setDia(0,1,'h',this.value)"></td><td><input type="number" min="0" step="0.25" value="" oninput="setDia(0,2,'h',this.value)"></td><td><input type="number" min="0" step="0.25" value="5" oninput="setDia(0,3,'h',this.value)"></td><td><input type="number" min="0" step="0.25" value="" oninput="setDia(0,4,'h',this.value)"></td><td><input type="number" min="0" step="0.25" value="" oninput="setDia(0,5,'h',this.value)"></td><td><input type="number" min="0" step="0.25" value="" oninput="setDia(0,6,'h',this.value)"></td><td id="sh0">5 h</td></tr>
+          <tr><td>Tips (USD)</td><td><input type="number" min="0" step="0.01" value="" oninput="setDia(0,0,'t',this.value)"></td><td><input type="number" min="0" step="0.01" value="" oninput="setDia(0,1,'t',this.value)"></td><td><input type="number" min="0" step="0.01" value="" oninput="setDia(0,2,'t',this.value)"></td><td><input type="number" min="0" step="0.01" value="150" oninput="setDia(0,3,'t',this.value)"></td><td><input type="number" min="0" step="0.01" value="" oninput="setDia(0,4,'t',this.value)"></td><td><input type="number" min="0" step="0.01" value="" oninput="setDia(0,5,'t',this.value)"></td><td><input type="number" min="0" step="0.01" value="" oninput="setDia(0,6,'t',this.value)"></td><td id="st0">US$ 150,00</td></tr>
+        </tbody>
+        <tfoot><tr><td>Ingreso semana</td><td colspan="7" class="muted" id="sd0">5 h × US$ 11,25 = US$ 56,25 + tips US$ 150,00</td><td id="ss0">US$ 206,25</td></tr></tfoot>
+      </table></div>
+    </div></div>
+    <button class="primary no-print" onclick="agregarSemana()">+ Agregar semana</button>
+  </section>
+
+  <!-- EGRESOS -->
+  <section class="grid2">
+    <div class="card">
+      <h2>Egresos <span class="tag egr">Carga</span></h2>
+      <div class="row no-print">
+        <div><label>Fecha</label><input type="date" id="eFecha"></div>
+        <div><label>Rubro</label>
+          <select id="eRubro"><option>Alquiler</option><option>Luz</option><option>Internet</option><option>Celular</option><option>Viáticos</option><option>Comida</option></select>
+        </div>
+      </div>
+      <div class="row no-print" style="margin-top:10px">
+        <div><label>Detalle</label><input type="text" id="eDet" placeholder="Opcional"></div>
+        <div><label>Importe (USD)</label><input type="number" id="eImp" step="0.01" min="0"></div>
+        <div style="flex:0 0 auto"><button class="primary" onclick="agregarEgreso()">Agregar</button></div>
+      </div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Fecha</th><th style="text-align:left">Rubro</th><th style="text-align:left">Detalle</th><th>Importe</th><th class="no-print"></th></tr></thead>
+          <tbody id="tEgr">
+    <tr><td>29/10/2026</td><td style="text-align:left">Comida</td>
+    <td style="text-align:left">food</td><td>US$ 5,00</td>
+    <td class="no-print"><button class="danger" onclick="borrarEgreso(0)">✕</button></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Egresos por rubro</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rubro</th><th>Importe</th><th>%</th><th style="width:35%"></th></tr></thead>
+          <tbody id="tRubros"><tr><td>Alquiler</td><td>US$ 0,00</td><td>0.0%</td>
+      <td><div class="bar"><span style="width:0%"></span></div></td></tr><tr><td>Luz</td><td>US$ 0,00</td><td>0.0%</td>
+      <td><div class="bar"><span style="width:0%"></span></div></td></tr><tr><td>Internet</td><td>US$ 0,00</td><td>0.0%</td>
+      <td><div class="bar"><span style="width:0%"></span></div></td></tr><tr><td>Celular</td><td>US$ 0,00</td><td>0.0%</td>
+      <td><div class="bar"><span style="width:0%"></span></div></td></tr><tr><td>Viáticos</td><td>US$ 0,00</td><td>0.0%</td>
+      <td><div class="bar"><span style="width:0%"></span></div></td></tr><tr><td>Comida</td><td>US$ 5,00</td><td>100.0%</td>
+      <td><div class="bar"><span style="width:100%"></span></div></td></tr></tbody>
+          <tfoot><tr><td>Total</td><td id="totRubros">US$ 5,00</td><td>100%</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEUDAS Y PROYECCIÓN -->
+  <section class="card">
+    <h2>Deudas y proyección de pago <span class="tag egr">Proyección</span></h2>
+    <p class="muted">Cargá tus deudas. La proyección toma el saldo mensual (ingresos − egresos), destina el porcentaje que elijas y calcula cuándo cancelás cada una. Los pagos empiezan el mes siguiente al seleccionado.</p>
+    <div class="row">
+      <div><label>Saldo mensual a usar</label>
+        <select id="dBase">
+          <option value="actual">Saldo del mes seleccionado</option>
+          <option value="promedio">Promedio de los meses cargados</option>
+          <option value="manual">Monto que yo indique</option>
+        </select></div>
+      <div id="dManualWrap" style="display: none;"><label>Monto mensual (USD)</label><input type="number" id="dManual" min="0" step="0.01"></div>
+      <div><label>% del saldo para deudas</label><input type="number" id="dPct" min="0" max="100" step="1"></div>
+      <div><label>Prioridad de pago</label>
+        <select id="dMetodo">
+          <option value="bola">Primero la deuda más chica</option>
+          <option value="avalancha">Primero la de mayor interés</option>
+        </select></div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:14px">
+      <table>
+        <thead><tr><th>Deuda</th><th>Saldo (USD)</th><th>Interés mensual %</th><th>Pago mínimo/mes</th><th class="no-print"></th></tr></thead>
+        <tbody id="tDeudas">
+    <tr>
+      <td><input type="text" placeholder="Ej.: Tarjeta, préstamo" value="Tarjeta de crédito" oninput="setDeuda(0,'nombre',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="4450" oninput="setDeuda(0,'saldo',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="" oninput="setDeuda(0,'tasa',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="" oninput="setDeuda(0,'minimo',this.value)"></td>
+      <td class="no-print"><button class="danger" onclick="borrarDeuda(0)">✕</button></td>
+    </tr>
+    <tr>
+      <td><input type="text" placeholder="Ej.: Tarjeta, préstamo" value="College" oninput="setDeuda(1,'nombre',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="849.99" oninput="setDeuda(1,'saldo',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="" oninput="setDeuda(1,'tasa',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="" oninput="setDeuda(1,'minimo',this.value)"></td>
+      <td class="no-print"><button class="danger" onclick="borrarDeuda(1)">✕</button></td>
+    </tr>
+    <tr>
+      <td><input type="text" placeholder="Ej.: Tarjeta, préstamo" value="Viaje (febrero)" oninput="setDeuda(2,'nombre',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="800" oninput="setDeuda(2,'saldo',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="" oninput="setDeuda(2,'tasa',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="" oninput="setDeuda(2,'minimo',this.value)"></td>
+      <td class="no-print"><button class="danger" onclick="borrarDeuda(2)">✕</button></td>
+    </tr></tbody>
+      </table>
+    </div>
+    <button class="primary no-print" style="margin-top:10px" onclick="agregarDeuda()">+ Agregar deuda</button>
+
+    <div class="kpis" style="margin-top:16px">
+      <div class="kpi"><small>Saldo mensual base</small><b id="pBase" class="pos">US$ 1.101,25</b></div>
+      <div class="kpi ing"><small>Disponible para deudas / mes</small><b id="pDisp">US$ 1.101,25</b></div>
+      <div class="kpi egr"><small>Deuda total actual</small><b id="pDeuda">US$ 6.099,99</b></div>
+      <div class="kpi"><small>Meses hasta cancelar todo</small><b id="pMeses">6 meses</b></div>
+      <div class="kpi"><small>Fecha estimada sin deudas</small><b id="pFecha">Abr 2027</b></div>
+      <div class="kpi egr"><small>Intereses totales</small><b id="pInt">US$ 0,00</b></div>
+    </div>
+    <div id="pAviso" style="margin-top:10px"></div>
+
+    <div class="table-wrap" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Deuda</th><th>Saldo actual</th><th>Se cancela en</th><th>Intereses</th><th>Total a pagar</th></tr></thead>
+        <tbody id="pTabla"><tr><td>Tarjeta de crédito</td><td>US$ 4.450,00</td>
+    <td>6 meses (Abr 2027)</td>
+    <td>US$ 0,00</td><td>US$ 4.450,00</td></tr><tr><td>College</td><td>US$ 849,99</td>
+    <td>2 meses (Dic 2026)</td>
+    <td>US$ 0,00</td><td>US$ 849,99</td></tr><tr><td>Viaje (febrero)</td><td>US$ 800,00</td>
+    <td>1 mes (Nov 2026)</td>
+    <td>US$ 0,00</td><td>US$ 800,00</td></tr></tbody>
+      </table>
+    </div>
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;font-weight:600">Ver cronograma mes a mes</summary>
+      <div class="table-wrap" id="pPlan" style="margin-top:8px"><table><thead><tr><th>Mes</th><th>Tarjeta de crédito</th><th>College</th><th>Viaje (febrero)</th><th>Deuda restante</th></tr></thead><tbody>
+      <tr><td>Nov 2026</td><td>–</td><td>US$ 301,25</td><td>US$ 800,00</td><td>US$ 4.998,74</td></tr><tr><td>Dic 2026</td><td>US$ 552,51</td><td>US$ 548,74</td><td>–</td><td>US$ 3.897,49</td></tr><tr><td>Ene 2027</td><td>US$ 1.101,25</td><td>–</td><td>–</td><td>US$ 2.796,24</td></tr><tr><td>Feb 2027</td><td>US$ 1.101,25</td><td>–</td><td>–</td><td>US$ 1.694,99</td></tr><tr><td>Mar 2027</td><td>US$ 1.101,25</td><td>–</td><td>–</td><td>US$ 593,74</td></tr><tr><td>Abr 2027</td><td>US$ 593,74</td><td>–</td><td>–</td><td>US$ 0,00</td></tr>
+    </tbody></table></div>
+    </details>
+  </section>
+</main>
+
+<script>
+const DIAS = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const RUBROS = ["Alquiler","Luz","Internet","Celular","Viáticos","Comida"];
+const KEY = "control_ingresos_egresos_usd";
+const fmt = n => "US$ " + (Number(n)||0).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const num = v => parseFloat(v)||0;
+
+let data;
+try { data = JSON.parse(localStorage.getItem(KEY)) || null; } catch(e){ data = null; }
+if(!data) data = { valorHora: 0, fijo: 900, meses: {} };
+function defaults(){
+  if(!Array.isArray(data.deudas)) data.deudas = [
+    {nombre:"Tarjeta de crédito", saldo:4450, tasa:0, minimo:0},
+    {nombre:"College", saldo:850, tasa:0, minimo:0},
+    {nombre:"Viaje (febrero)", saldo:800, tasa:0, minimo:0}
+  ];
+  if(data.pctDeuda == null) data.pctDeuda = 100;
+  if(!data.metodo) data.metodo = "bola";
+  if(!data.base) data.base = "actual";
+  if(data.baseManual == null) data.baseManual = 0;
+}
+defaults();
+
+function guardar(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+
+const hoy = new Date();
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const parseISO = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const mesEl = document.getElementById("mes");
+mesEl.value = iso(hoy).slice(0,7);
+document.getElementById("iFecha").value = iso(hoy);
+document.getElementById("valorHora").value = data.valorHora;
+document.getElementById("fijo").value = data.fijo;
+document.getElementById("eRubro").innerHTML = RUBROS.map(r=>`<option>${r}</option>`).join("");
+document.getElementById("eFecha").value = iso(hoy);
+
+function mesActual(){
+  const k = mesEl.value;
+  if(!data.meses[k]) data.meses[k] = { semanas: [], egresos: [] };
+  return data.meses[k];
+}
+
+mesEl.onchange = render;
+document.getElementById("valorHora").oninput = e => { data.valorHora = num(e.target.value); guardar(); calcular(); };
+document.getElementById("fijo").oninput = e => { data.fijo = num(e.target.value); guardar(); calcular(); };
+
+function agregarSemana(){
+  const m = mesActual();
+  m.semanas.push({ desde: "", dias: DIAS.map(()=>({h:0,t:0})) });
+  guardar(); render();
+}
+function borrarSemana(i){
+  if(!confirm("¿Eliminar esta semana?")) return;
+  mesActual().semanas.splice(i,1); guardar(); render();
+}
+function setDia(s,d,campo,val){
+  mesActual().semanas[s].dias[d][campo] = num(val); guardar(); calcular();
+}
+function setDesde(s,val){ mesActual().semanas[s].desde = val; guardar(); render(); }
+
+function cargarDia(){
+  const f = document.getElementById("iFecha").value;
+  if(!f){ alert("Elegí el día."); return; }
+  const hEl = document.getElementById("iHoras"), tEl = document.getElementById("iTips");
+  if(hEl.value === "" && tEl.value === ""){ alert("Ingresá horas o tips."); return; }
+  if(mesEl.value !== f.slice(0,7)) mesEl.value = f.slice(0,7);
+  const dt = parseISO(f);
+  const dow = (dt.getDay()+6)%7;                       // 0 = lunes
+  const lunes = iso(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()-dow));
+  const m = mesActual();
+  let sem = m.semanas.find(s=>s.desde === lunes);
+  if(!sem){
+    sem = { desde: lunes, dias: DIAS.map(()=>({h:0,t:0})) };
+    m.semanas.push(sem);
+    m.semanas.sort((a,b)=>(a.desde||"9").localeCompare(b.desde||"9"));
+  }
+  if(hEl.value !== "") sem.dias[dow].h = num(hEl.value);
+  if(tEl.value !== "") sem.dias[dow].t = num(tEl.value);
+  guardar(); render();
+  hEl.value = ""; tEl.value = "";
+  document.getElementById("iFecha").value = iso(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()+1));
+  hEl.focus();
+}
+document.getElementById("iTips").addEventListener("keydown", e => { if(e.key === "Enter") cargarDia(); });
+document.getElementById("iHoras").addEventListener("keydown", e => { if(e.key === "Enter") document.getElementById("iTips").focus(); });
+
+function encabezadoDia(s,j){
+  if(!s.desde) return DIAS[j];
+  const d = parseISO(s.desde); d.setDate(d.getDate()+j);
+  return `${DIAS[j]}<br><span style="font-weight:400">${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}</span>`;
+}
+
+function agregarEgreso(){
+  const imp = num(document.getElementById("eImp").value);
+  if(imp<=0){ alert("Ingresá un importe."); return; }
+  mesActual().egresos.push({
+    fecha: document.getElementById("eFecha").value,
+    rubro: document.getElementById("eRubro").value,
+    det: document.getElementById("eDet").value.trim(),
+    imp
+  });
+  document.getElementById("eImp").value = ""; document.getElementById("eDet").value = "";
+  guardar(); render();
+}
+function borrarEgreso(i){ mesActual().egresos.splice(i,1); guardar(); render(); }
+
+function render(){
+  const m = mesActual();
+  // Semanas
+  document.getElementById("semanas").innerHTML = m.semanas.map((s,i)=>`
+    <div class="week">
+      <div class="week-head">
+        <div><b>Semana ${i+1}</b> &nbsp;<span class="muted">desde</span>
+          <input type="date" value="${s.desde}" onchange="setDesde(${i},this.value)"></div>
+        <button class="danger no-print" onclick="borrarSemana(${i})">Eliminar</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Concepto</th>${DIAS.map((d,j)=>`<th>${encabezadoDia(s,j)}</th>`).join("")}<th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Horas</td>${s.dias.map((d,j)=>`<td><input type="number" min="0" step="0.25" value="${d.h||""}" oninput="setDia(${i},${j},'h',this.value)"></td>`).join("")}<td id="sh${i}"></td></tr>
+          <tr><td>Tips (USD)</td>${s.dias.map((d,j)=>`<td><input type="number" min="0" step="0.01" value="${d.t||""}" oninput="setDia(${i},${j},'t',this.value)"></td>`).join("")}<td id="st${i}"></td></tr>
+        </tbody>
+        <tfoot><tr><td>Ingreso semana</td><td colspan="7" class="muted" id="sd${i}"></td><td id="ss${i}"></td></tr></tfoot>
+      </table></div>
+    </div>`).join("") || `<p class="muted">Todavía no cargaste semanas para este mes.</p>`;
+
+  // Egresos
+  const eg = m.egresos.map((e,i)=>({...e,i})).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  document.getElementById("tEgr").innerHTML = eg.map(e=>`
+    <tr><td>${e.fecha.split("-").reverse().join("/")}</td><td style="text-align:left">${e.rubro}</td>
+    <td style="text-align:left">${e.det.replace(/</g,"&lt;")}</td><td>${fmt(e.imp)}</td>
+    <td class="no-print"><button class="danger" onclick="borrarEgreso(${e.i})">✕</button></td></tr>`).join("")
+    || `<tr><td colspan="5" class="muted" style="text-align:left">Sin egresos cargados.</td></tr>`;
+  calcular();
+}
+
+function calcular(){
+  const m = mesActual();
+  let horas=0, tips=0;
+  m.semanas.forEach((s,i)=>{
+    const h = s.dias.reduce((a,d)=>a+num(d.h),0);
+    const t = s.dias.reduce((a,d)=>a+num(d.t),0);
+    horas+=h; tips+=t;
+    const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
+    set("sh"+i, h.toLocaleString("es-AR")+" h");
+    set("st"+i, fmt(t));
+    set("sd"+i, `${h} h × ${fmt(data.valorHora)} = ${fmt(h*data.valorHora)} + tips ${fmt(t)}`);
+    set("ss"+i, fmt(h*data.valorHora + t));
+  });
+  const ingHoras = horas*data.valorHora;
+  const ing = ingHoras + tips + data.fijo;
+  const porRubro = Object.fromEntries(RUBROS.map(r=>[r,0]));
+  m.egresos.forEach(e=>porRubro[e.rubro]=(porRubro[e.rubro]||0)+num(e.imp));
+  const egr = Object.values(porRubro).reduce((a,b)=>a+b,0);
+  const saldo = ing - egr;
+
+  document.getElementById("kHoras").textContent = horas.toLocaleString("es-AR")+" h";
+  document.getElementById("kIngHoras").textContent = fmt(ingHoras);
+  document.getElementById("kTips").textContent = fmt(tips);
+  document.getElementById("kFijo").textContent = fmt(data.fijo);
+  document.getElementById("kIng").textContent = fmt(ing);
+  document.getElementById("kEgr").textContent = fmt(egr);
+  const ks = document.getElementById("kSaldo");
+  ks.textContent = fmt(saldo); ks.className = saldo>=0?"pos":"neg";
+
+  document.getElementById("tRubros").innerHTML = RUBROS.map(r=>{
+    const p = egr? porRubro[r]/egr*100 : 0;
+    return `<tr><td>${r}</td><td>${fmt(porRubro[r])}</td><td>${p.toFixed(1)}%</td>
+      <td><div class="bar"><span style="width:${p}%"></span></div></td></tr>`;
+  }).join("");
+  document.getElementById("totRubros").textContent = fmt(egr);
+  proyectar();
+}
+
+function exportar(){
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "respaldo-ingresos-egresos.json"; a.click();
+}
+function importar(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ data = JSON.parse(r.result); guardar();
+    defaults(); syncControlesDeuda();
+    document.getElementById("valorHora").value=data.valorHora; document.getElementById("fijo").value=data.fijo; render();
+  }catch(e){ alert("Archivo inválido."); } };
+  r.readAsText(f);
+}
+
+/* ===== DEUDAS Y PROYECCIÓN ===== */
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+
+function saldoDe(m){
+  let ing = data.fijo, egr = 0;
+  m.semanas.forEach(s=>s.dias.forEach(d=>{ ing += num(d.h)*data.valorHora + num(d.t); }));
+  m.egresos.forEach(e=>egr += num(e.imp));
+  return ing - egr;
+}
+function baseMensual(){
+  if(data.base === "manual") return num(data.baseManual);
+  if(data.base === "promedio"){
+    const ms = Object.values(data.meses).filter(m=>m.semanas.length || m.egresos.length);
+    return ms.length ? ms.reduce((a,m)=>a+saldoDe(m),0)/ms.length : 0;
+  }
+  return saldoDe(mesActual());
+}
+
+function syncControlesDeuda(){
+  document.getElementById("dBase").value = data.base;
+  document.getElementById("dManual").value = data.baseManual || "";
+  document.getElementById("dPct").value = data.pctDeuda;
+  document.getElementById("dMetodo").value = data.metodo;
+  document.getElementById("dManualWrap").style.display = data.base==="manual" ? "" : "none";
+  renderListaDeudas();
+}
+document.getElementById("dBase").onchange = e => { data.base = e.target.value; guardar();
+  document.getElementById("dManualWrap").style.display = data.base==="manual" ? "" : "none"; proyectar(); };
+document.getElementById("dManual").oninput = e => { data.baseManual = num(e.target.value); guardar(); proyectar(); };
+document.getElementById("dPct").oninput = e => { data.pctDeuda = Math.min(100,Math.max(0,num(e.target.value))); guardar(); proyectar(); };
+document.getElementById("dMetodo").onchange = e => { data.metodo = e.target.value; guardar(); proyectar(); };
+
+function agregarDeuda(){ data.deudas.push({nombre:"", saldo:0, tasa:0, minimo:0}); guardar(); renderListaDeudas(); proyectar(); }
+function borrarDeuda(i){ if(!confirm("¿Eliminar esta deuda?")) return; data.deudas.splice(i,1); guardar(); renderListaDeudas(); proyectar(); }
+function setDeuda(i,campo,val){ data.deudas[i][campo] = campo==="nombre" ? val : num(val); guardar(); proyectar(); }
+
+function renderListaDeudas(){
+  document.getElementById("tDeudas").innerHTML = data.deudas.map((d,i)=>`
+    <tr>
+      <td><input type="text" placeholder="Ej.: Tarjeta, préstamo" value="${esc(d.nombre)}" oninput="setDeuda(${i},'nombre',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="${d.saldo||""}" oninput="setDeuda(${i},'saldo',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="${d.tasa||""}" oninput="setDeuda(${i},'tasa',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="${d.minimo||""}" oninput="setDeuda(${i},'minimo',this.value)"></td>
+      <td class="no-print"><button class="danger" onclick="borrarDeuda(${i})">✕</button></td>
+    </tr>`).join("") || `<tr><td colspan="5" class="muted" style="text-align:left">Sin deudas cargadas.</td></tr>`;
+}
+
+function etiquetaMes(n){
+  const [y,m] = mesEl.value.split("-").map(Number);
+  const d = new Date(y, m-1+n, 1);
+  const t = d.toLocaleDateString("es-AR",{month:"short",year:"numeric"});
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+
+function proyectar(){
+  const set = (id,v)=>document.getElementById(id).textContent = v;
+  const base = baseMensual();
+  const disp = Math.max(0, base*data.pctDeuda/100);
+  set("pBase", fmt(base)); document.getElementById("pBase").className = base>=0?"pos":"neg";
+  set("pDisp", fmt(disp));
+
+  const ds = data.deudas.map((d,i)=>({i, n:d.nombre||`Deuda ${i+1}`, ini:num(d.saldo), s:num(d.saldo),
+    r:num(d.tasa)/100, min:num(d.minimo), int:0, pag:0, fin:null})).filter(d=>d.s>0);
+  const total = ds.reduce((a,d)=>a+d.s,0);
+  set("pDeuda", fmt(total));
+  const aviso = document.getElementById("pAviso"), tabla = document.getElementById("pTabla"), planEl = document.getElementById("pPlan");
+  aviso.innerHTML = ""; planEl.innerHTML = "";
+
+  if(!ds.length){ set("pMeses","–"); set("pFecha","–"); set("pInt",fmt(0));
+    tabla.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:left">Cargá al menos una deuda con saldo.</td></tr>`; return; }
+
+  const avisos = [];
+  if(base <= 0) avisos.push("El saldo mensual es cero o negativo: con estos ingresos y egresos no queda margen para pagar deudas.");
+  const sumMin = ds.reduce((a,d)=>a+d.min,0);
+  if(sumMin > disp && disp > 0) avisos.push(`Los pagos mínimos suman ${fmt(sumMin)} y superan lo disponible (${fmt(disp)}).`);
+
+  const plan = []; let mes = 0, estancada = false;
+  while(ds.some(d=>d.s>0.005) && mes < 600){
+    mes++;
+    const antes = ds.reduce((a,d)=>a+d.s,0);
+    let rest = disp; const pagos = {};
+    ds.forEach(d=>{ if(d.s>0){ const it = d.s*d.r; d.s += it; d.int += it; } });
+    const pagar = (d,monto)=>{ const p = Math.min(monto, d.s, rest); if(p<=0) return; d.s -= p; d.pag += p; rest -= p; pagos[d.i] = (pagos[d.i]||0)+p; };
+    ds.forEach(d=>{ if(d.s>0) pagar(d, d.min); });
+    const orden = ds.filter(d=>d.s>0.005).sort(data.metodo==="bola" ? (a,b)=>a.s-b.s : (a,b)=>(b.r-a.r)||(a.s-b.s));
+    for(const d of orden){ if(rest<=0.005) break; pagar(d, d.s); }
+    ds.forEach(d=>{ if(d.s<=0.005 && d.fin===null){ d.s = 0; d.fin = mes; } });
+    const despues = ds.reduce((a,d)=>a+d.s,0);
+    plan.push({mes, pagos, saldo: despues});
+    if(despues >= antes - 0.005){ estancada = true; break; }
+  }
+
+  const totInt = ds.reduce((a,d)=>a+d.int,0);
+  set("pInt", fmt(totInt));
+  if(estancada || ds.some(d=>d.fin===null)){
+    avisos.push("Con el monto disponible la deuda no baja (los intereses son iguales o mayores a lo que se paga). Hace falta aumentar el % destinado o reducir egresos.");
+    set("pMeses","No alcanza"); set("pFecha","–");
+  } else {
+    const ult = Math.max(...ds.map(d=>d.fin));
+    set("pMeses", ult + (ult===1?" mes":" meses")); set("pFecha", etiquetaMes(ult));
+  }
+  aviso.innerHTML = avisos.map(a=>`<div class="aviso" style="margin-bottom:6px">${a}</div>`).join("");
+
+  tabla.innerHTML = ds.map(d=>`<tr><td>${esc(d.n)}</td><td>${fmt(d.ini)}</td>
+    <td>${d.fin ? `${d.fin} ${d.fin===1?"mes":"meses"} (${etiquetaMes(d.fin)})` : '<span class="neg">No se cancela</span>'}</td>
+    <td>${fmt(d.int)}</td><td>${fmt(d.pag)}</td></tr>`).join("");
+
+  if(!estancada){
+    planEl.innerHTML = `<table><thead><tr><th>Mes</th>${ds.map(d=>`<th>${esc(d.n)}</th>`).join("")}<th>Deuda restante</th></tr></thead><tbody>
+      ${plan.map(p=>`<tr><td>${etiquetaMes(p.mes)}</td>${ds.map(d=>`<td>${p.pagos[d.i]?fmt(p.pagos[d.i]):"–"}</td>`).join("")}<td>${fmt(p.saldo)}</td></tr>`).join("")}
+    </tbody></table>`;
+  }
+}
+
+syncControlesDeuda();
+render();
+</script>
+
+
+</body></html>
